@@ -1,0 +1,25 @@
+name: Create upload key (run once)
+on: workflow_dispatch
+jobs:
+  key:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Generate key
+        run: |
+          PASS=$(openssl rand -hex 16)
+          keytool -genkeypair -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 \
+            -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=BeFree Upload"
+          base64 -w0 upload.jks > UPLOAD_KEYSTORE_BASE64.txt
+          echo -n "$PASS" > UPLOAD_KEYSTORE_PASSWORD.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: upload-key-SAVE-AND-DELETE
+          path: |
+            upload.jks
+            UPLOAD_KEYSTORE_BASE64.txt
+            UPLOAD_KEYSTORE_PASSWORD.txt
+          retention-days: 1
